@@ -88,7 +88,8 @@ public abstract class AbstractResource implements IXtendXpandResource {
 			IFile f = (IFile) getUnderlyingStorage();
 			final Set<AnalysationIssue> issues = new HashSet<AnalysationIssue>();
 			analyze(ctx, issues);
-			if (hasSemanticErrors) {
+			//BNI bug 312569 Markers should only be deleted if there are NO semanticErrors
+			if (!hasSemanticErrors) {
 				XtendXpandMarkerManager.deleteMarkers(f);
 			}
 			hasSemanticErrors = !issues.isEmpty();
