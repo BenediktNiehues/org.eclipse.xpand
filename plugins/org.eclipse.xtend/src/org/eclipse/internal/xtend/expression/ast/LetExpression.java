@@ -25,50 +25,60 @@ import org.eclipse.xtend.typesystem.Type;
  */
 public class LetExpression extends Expression {
 
-    private Expression varExpression;
+	private Expression varExpression;
 
-    private Expression targetExpression;
+	private Expression targetExpression;
 
-    private Identifier varName;
+	private Identifier varName;
 
-    public LetExpression(final Identifier varName,
-            final Expression varExpression, final Expression target) {
-        this.varName = varName;
-        this.varExpression = varExpression;
-        targetExpression = target;
-    }
+	public LetExpression(final Identifier varName,
+			final Expression varExpression, final Expression target) {
+		this.varName = varName;
+		this.varExpression = varExpression;
+		targetExpression = target;
+	}
 
-    public Expression getVarExpression () {
-        return varExpression;
-    }
-    
-    public Expression getTargetExpression () {
-        return targetExpression;
-    }
-    
-    public String getName () {
-        return varName.getValue();
-    }
-    
-    @Override
-    public Object evaluateInternal(ExecutionContext ctx) {
-        final Object o = varExpression.evaluate(ctx);
-        ctx = ctx.cloneWithVariable(new Variable(varName.getValue(), o));
-        return targetExpression.evaluate(ctx);
-    }
+	public Expression getVarExpression() {
+		return varExpression;
+	}
 
-    @Override
-	public Type analyzeInternal(ExecutionContext ctx, final Set<AnalysationIssue> issues) {
-        final Type t = varExpression.analyze(ctx, issues);
-        if (t == null)
-            return null;
-        ctx = ctx.cloneWithVariable(new Variable(varName.getValue(), t));
-        return targetExpression.analyze(ctx, issues);
-    }
+	public Expression getTargetExpression() {
+		return targetExpression;
+	}
 
-    @Override
+	public String getName() {
+		return varName.getValue();
+	}
+
+	@Override
+	public Object evaluateInternal(ExecutionContext ctx) {
+		final Object o = varExpression.evaluate(ctx);
+		ctx = ctx.cloneWithVariable(new Variable(varName.getValue(), o));
+		return targetExpression.evaluate(ctx);
+	}
+
+	@Override
+	public Type analyzeInternal(ExecutionContext ctx,
+			final Set<AnalysationIssue> issues) {
+		// BNI: fix for bug#312425 to avoid NullPointerException if the
+		// expression could not be parsed correctly
+		if (varExpression == null || targetExpression == null) {
+			issues.add(new AnalysationIssue(AnalysationIssue.SYNTAX_ERROR,
+					"Syntax error in expression", this));
+			return null;
+		} else {
+			final Type t = varExpression.analyze(ctx, issues);
+			if (t == null)
+				return null;
+			ctx = ctx.cloneWithVariable(new Variable(varName.getValue(), t));
+			return targetExpression.analyze(ctx, issues);
+		}
+	}
+
+	@Override
 	protected String toStringInternal() {
-        return "let " + varName + "=" + varExpression + " : " + targetExpression;
-    }
+		return "let " + varName + "=" + varExpression + " : "
+				+ targetExpression;
+	}
 
 }

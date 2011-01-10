@@ -25,12 +25,15 @@ import org.eclipse.xtend.typesystem.Type;
  * @author Sven Efftinge - Initial contribution and API
  * @author Bernd Kolb
  */
-public abstract class Expression extends SyntaxElement implements Analyzable, Evaluatable {
+public abstract class Expression extends SyntaxElement implements Analyzable,
+		Evaluatable {
 
-	protected Type findType(final Identifier type, final ExecutionContext ctx, final Set<AnalysationIssue> issues) {
+	protected Type findType(final Identifier type, final ExecutionContext ctx,
+			final Set<AnalysationIssue> issues) {
 		final Type toCast = ctx.getTypeForName(type.getValue());
 		if (toCast == null) {
-			issues.add(new AnalysationIssue(AnalysationIssue.TYPE_NOT_FOUND, type.getValue(), type));
+			issues.add(new AnalysationIssue(AnalysationIssue.TYPE_NOT_FOUND,
+					type.getValue(), type));
 		}
 		return toCast;
 	}
@@ -49,16 +52,14 @@ public abstract class Expression extends SyntaxElement implements Analyzable, Ev
 			}
 			evaluateInternal = evaluateInternal(ctx);
 			return evaluateInternal;
-		}
-		catch (final EvaluationException ex) {
+		} catch (final EvaluationException ex) {
 			ctx.handleRuntimeException(ex, this, null);
 			return null;
-		}
-		catch (final RuntimeException ex) {
-			ctx.handleRuntimeException(new EvaluationException(ex, this, ctx), this, null);
+		} catch (final RuntimeException ex) {
+			ctx.handleRuntimeException(new EvaluationException(ex, this, ctx),
+					this, null);
 			return null;
-		}
-		finally {
+		} finally {
 			if (ctx.getCallback() != null) {
 				ctx.getCallback().post(this, ctx, evaluateInternal);
 			}
@@ -69,25 +70,34 @@ public abstract class Expression extends SyntaxElement implements Analyzable, Ev
 		Type val = null;
 		try {
 			if (ctx.getCallback() != null) {
-				if(!ctx.getCallback().pre(this, ctx)) {
+				if (!ctx.getCallback().pre(this, ctx)) {
 					return null;
 				}
 			}
 			val = analyzeInternal(ctx, issues);
 			return val;
 		}
+		// BNI: fix for bug#312425
+		// a nullpointer exception occurred if the parser could not parse the
+		// expression, so no errormarkers were created.
 		catch (final RuntimeException ex) {
-			issues.add(new AnalysationIssue(AnalysationIssue.INTERNAL_ERROR, ex.getMessage(), this));
+			if (ex.getMessage() != null) {
+				issues.add(new AnalysationIssue(
+						AnalysationIssue.INTERNAL_ERROR, ex.getMessage(), this));
+			} else {
+				issues.add(new AnalysationIssue(
+						AnalysationIssue.INTERNAL_ERROR, "Syntax Error", this));
+			}
 			return null;
-		}
-		finally {
+		} finally {
 			if (ctx.getCallback() != null) {
 				ctx.getCallback().post(this, ctx, val);
 			}
 		}
 	}
 
-	protected abstract Type analyzeInternal(ExecutionContext ctx, Set<AnalysationIssue> issues);
+	protected abstract Type analyzeInternal(ExecutionContext ctx,
+			Set<AnalysationIssue> issues);
 
 	@Override
 	public final String toString() {
