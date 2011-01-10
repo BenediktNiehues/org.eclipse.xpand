@@ -48,7 +48,7 @@ public abstract class ResourceContributorBase implements ResourceContributor {
 				int end = e.getEnd();
 				if (source instanceof IFile) {
 					IFile f = (IFile) source;
-					if (start == 0 && end == 1) {
+					if (start == 0 && end == 1 && e.getMessage().contains("<EOF>")) {
 						// BNI find the offset of the last charcter!
 						try {
 							Reader reader = createReader(source);
